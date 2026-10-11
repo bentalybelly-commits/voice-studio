@@ -1,4 +1,5 @@
 import os
+import re
 import html
 import edge_tts
 from fastapi import FastAPI, Response, Form
@@ -6,12 +7,27 @@ from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
-# THE MARK CLONE CONFIGURATION
-# BrianNeural is the 'Twin' of ElevenLabs Mark. 
-# We apply a +5% rate to match Mark's brisk conversational pace.
-MARK_VOICE = "en-US-BrianNeural"
-MARK_RATE = "+5%"
-MARK_PITCH = "-1Hz"
+# ACOUSTIC TUNING: Mark Clone (Deeper, Energetic, Conversational)
+VOICE_NAME = "en-US-AndrewNeural"
+SPEED_RATE = "+8%"    # Brisk, energetic pacing
+PITCH_DEPTH = "-4Hz"  # Deeper mid-low tone
+VOLUME_BOOST = "+10%" # Stronger, confident projection
+
+def sanitize_text(raw_text: str) -> str:
+    """Strips code snippets, HTML tags, and markdown so AI never reads code aloud."""
+    # 1. Remove markdown code blocks (```code```)
+    text = re.sub(r'```[\s\S]*?```', '', raw_text)
+    # 2. Remove inline code (`code`)
+    text = re.sub(r'`[^`]*`', '', text)
+    # 3. Remove HTML tags (<tag>)
+    text = re.sub(r'<[^>]+>', '', text)
+    # 4. Remove URLs
+    text = re.sub(r'http[s]?://\S+', '', text)
+    # 5. Unescape HTML entities (&amp; -> &)
+    text = html.unescape(text)
+    # 6. Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -19,31 +35,33 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mark AI Studio</title>
+    <title>Mark AI - Conversational Studio</title>
     <style>
-        :root { --bg: #0b0f1a; --card: #161b2c; --accent: #4f46e5; --text: #f1f5f9; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: var(--card); width: 90%; max-width: 450px; padding: 30px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid #2d3748; }
-        h1 { font-size: 1.5rem; margin-bottom: 5px; color: #818cf8; text-align: center; }
-        p { text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 25px; }
-        textarea { width: 100%; background: #0b0f1a; border: 1px solid #2d3748; color: white; padding: 15px; border-radius: 12px; font-size: 1rem; resize: none; box-sizing: border-box; outline: none; }
+        :root { --bg: #0b0f1a; --card: #161b2c; --accent: #6366f1; --text: #f1f5f9; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }
+        .card { background: var(--card); width: 100%; max-width: 480px; padding: 24px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid #2d3748; }
+        h1 { font-size: 1.4rem; margin-top: 0; margin-bottom: 4px; color: #a5b4fc; text-align: center; }
+        p.sub { text-align: center; color: var(--muted); font-size: 0.82rem; margin-top: 0; margin-bottom: 20px; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        textarea { width: 100%; background: #0b0f1a; border: 1px solid #334155; color: white; padding: 14px; border-radius: 12px; font-size: 0.95rem; resize: none; box-sizing: border-box; outline: none; line-height: 1.5; }
         textarea:focus { border-color: var(--accent); }
-        button { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: bold; margin-top: 20px; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #4338ca; }
-        button:disabled { background: #312e81; color: #94a3b8; cursor: not-allowed; }
-        #player { width: 100%; margin-top: 25px; display: none; }
-        .status { text-align: center; font-size: 0.8rem; margin-top: 15px; color: #818cf8; display: none; }
+        button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: bold; margin-top: 18px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #4f46e5; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status { text-align: center; font-size: 0.85rem; margin-top: 14px; color: #a5b4fc; display: none; }
+        #player { width: 100%; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>🎙️ Mark AI Studio</h1>
-        <p>Conversational • Warm • Natural Pacing</p>
+        <p class="sub">Deep • Energetic • Natural Conversational</p>
         
-        <textarea id="text" rows="6" placeholder="Paste your script here... Mark handles the conversational flow and breathing automatically."></textarea>
+        <label>YOUR SCRIPT</label>
+        <textarea id="text" rows="6" placeholder="Paste your text here... Code snippets and tags will be cleaned out automatically so Mark reads smoothly."></textarea>
         
-        <button id="btn" onclick="generate()">Generate Mark's Voice</button>
-        <div class="status" id="status">Mark is thinking...</div>
+        <button id="btn" onclick="generate()">Generate Voiceover</button>
+        <div id="status">⚡ Synthesizing Mark's voice...</div>
         
         <audio id="player" controls></audio>
     </div>
@@ -51,7 +69,7 @@ HTML_TEMPLATE = """
     <script>
         async function generate() {
             const text = document.getElementById('text').value.trim();
-            if(!text) return;
+            if(!text) return alert("Please paste or type a script first!");
             
             const btn = document.getElementById('btn');
             const status = document.getElementById('status');
@@ -66,12 +84,13 @@ HTML_TEMPLATE = """
             
             try {
                 const res = await fetch('/generate', { method: 'POST', body });
+                if(!res.ok) throw new Error("Generation error");
                 const blob = await res.blob();
                 player.src = URL.createObjectURL(blob);
                 player.style.display = 'block';
                 player.play();
             } catch(e) {
-                alert("Connection error");
+                alert("Error generating voice. Please try again.");
             } finally {
                 btn.disabled = false;
                 status.style.display = 'none';
@@ -88,22 +107,21 @@ async def ui():
 
 @app.post("/generate")
 async def generate(text: str = Form(...)):
-    # Clean text for XML safety
-    clean_text = html.escape(text)
+    # Clean text to prevent code/tags from being read aloud
+    clean_text = sanitize_text(text)
     
-    # This SSML structure mimics ElevenLabs' 'Conversational' logic
-    # It forces the engine to prioritize flow over robotic precision.
-    ssml = f"""
-    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-        <voice name="{MARK_VOICE}">
-            <prosody rate="{MARK_RATE}" pitch="{MARK_PITCH}">
-                {clean_text}
-            </prosody>
-        </voice>
-    </speak>
-    """
+    if not clean_text:
+        return Response(content=b"", status_code=400)
     
-    communicate = edge_tts.Communicate(ssml, MARK_VOICE)
+    # Generate speech natively using tuned parameters (NO manual XML wrapping)
+    communicate = edge_tts.Communicate(
+        text=clean_text, 
+        voice=VOICE_NAME, 
+        rate=SPEED_RATE, 
+        pitch=PITCH_DEPTH,
+        volume=VOLUME_BOOST
+    )
+    
     audio = bytearray()
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":

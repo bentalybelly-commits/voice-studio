@@ -1,355 +1,157 @@
-import io
-import asyncio
-
+import os
 import edge_tts
-from fastapi import FastAPI, Form, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, Response
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
-app = FastAPI(title="Mark AI Studio")
+app = FastAPI()
 
 VOICES = {
-    "Andrew": "en-US-AndrewMultilingualNeural",
-    "Brian": "en-US-BrianMultilingualNeural",
-    "Guy": "en-US-GuyNeural",
-    "Jenny": "en-US-JennyNeural",
-    "Aria": "en-US-AriaNeural",
-    "Sonia": "en-GB-SoniaNeural",
+    "🎙️ Mark - Natural Conversational": "en-US-AndrewMultilingualNeural",
+    "🎙️ Mark (Warm Casual)": "en-US-BrianMultilingualNeural",
+    "🎙️ Mark (Classic)": "en-US-AndrewNeural",
+    "🎙️ Casual Guy": "en-US-GuyNeural",
+    "👴 Deep Storyteller": "en-US-SteffanNeural",
+    "☕ Jenny (Natural Warm Female)": "en-US-JennyNeural",
+    "⚡ Sara (Energetic Female)": "en-US-SaraNeural",
+    "🧘 Ava (Soft Female)": "en-US-AvaNeural",
+    "🇨🇦 Liam (Canadian Male)": "en-CA-LiamNeural",
+    "🇬🇧 Ryan (British Male)": "en-GB-RyanNeural",
 }
 
-PAGE = """
+HTML_TEMPLATE = """
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mark AI Studio</title>
-
-<style>
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    padding: 20px;
-    background: #101114;
-    color: white;
-    font-family: Arial, sans-serif;
-}
-
-main {
-    max-width: 560px;
-    margin: 35px auto;
-}
-
-h1 {
-    text-align: center;
-    font-size: 30px;
-    margin-bottom: 8px;
-}
-
-h1 span {
-    color: #927bff;
-}
-
-.subtitle {
-    text-align: center;
-    color: #aaa;
-    margin-bottom: 30px;
-}
-
-.card {
-    background: #1b1c22;
-    padding: 20px;
-    border-radius: 15px;
-    border: 1px solid #30313a;
-}
-
-label {
-    display: block;
-    margin: 18px 0 9px;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-textarea, select {
-    width: 100%;
-    padding: 14px;
-    border: 1px solid #393a45;
-    border-radius: 9px;
-    background: #111216;
-    color: white;
-    font-size: 15px;
-}
-
-textarea {
-    height: 210px;
-    resize: vertical;
-    line-height: 1.5;
-}
-
-button {
-    width: 100%;
-    margin-top: 22px;
-    padding: 15px;
-    border: none;
-    border-radius: 9px;
-    background: #927bff;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-button:disabled {
-    opacity: 0.6;
-}
-
-#status {
-    margin-top: 16px;
-    font-size: 14px;
-    text-align: center;
-    overflow-wrap: anywhere;
-}
-
-#result {
-    margin-top: 20px;
-    display: none;
-}
-
-audio {
-    width: 100%;
-    margin-top: 12px;
-}
-
-#download {
-    display: block;
-    margin-top: 14px;
-    padding: 14px;
-    border-radius: 9px;
-    background: #292a34;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-}
-
-.small {
-    margin-top: 12px;
-    color: #999;
-    font-size: 12px;
-    text-align: center;
-}
-</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Studio</title>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #6366f1; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; padding: 16px; max-width: 500px; margin: 0 auto; box-sizing: border-box; }
+        .card { background: var(--card); padding: 22px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        h2 { margin-top: 0; text-align: center; color: #a5b4fc; font-size: 1.4rem; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; margin-top: 14px; color: var(--muted); text-transform: uppercase; }
+        textarea, select, button { width: 100%; margin-top: 6px; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 0.95rem; }
+        .row { display: flex; gap: 10px; }
+        .row > div { flex: 1; }
+        button { background: var(--accent); font-weight: bold; border: none; margin-top: 18px; padding: 14px; border-radius: 10px; font-size: 1rem; }
+        button:disabled { opacity: 0.5; }
+        #loader { display: none; text-align: center; margin-top: 14px; color: #a5b4fc; }
+        #player { width: 100%; margin-top: 18px; display: none; }
+    </style>
 </head>
-
 <body>
-<main>
-    <h1>Mark <span>AI Studio</span></h1>
-    <p class="subtitle">Turn your script into a voiceover.</p>
-
     <div class="card">
-        <label for="script">Your script</label>
-        <textarea id="script"
-        placeholder="Paste your narration here..."></textarea>
+        <h2>🎙️ AI Voice Studio</h2>
 
-        <label for="voice">Choose a voice</label>
-        <select id="voice">
-            <option value="Andrew">Andrew — US Male</option>
-            <option value="Brian">Brian — US Male</option>
-            <option value="Guy">Guy — US Male</option>
-            <option value="Jenny">Jenny — US Female</option>
-            <option value="Aria">Aria — US Female</option>
-            <option value="Sonia">Sonia — UK Female</option>
-        </select>
+        <label>Your script</label>
+        <textarea id="text" rows="6" placeholder="Type script here... Use commas and ? ! for natural pauses."></textarea>
 
-        <button id="generate" onclick="generateVoice()">
-            Generate Voice
-        </button>
+        <label>Voice</label>
+        <select id="voice">__OPTIONS__</select>
 
-        <div id="status"></div>
-
-        <div id="result">
-            <label>Your voiceover</label>
-            <audio id="player" controls></audio>
-            <a id="download" download="mark-voiceover.mp3">
-                Download MP3
-            </a>
+        <div class="row">
+            <div>
+                <label>Speed</label>
+                <select id="rate">
+                    <option value="-10%">Slower (-10%)</option>
+                    <option value="+0%">Natural</option>
+                    <option value="+8%" selected>Brisk (+8%)</option>
+                    <option value="+15%">Fast (+15%)</option>
+                </select>
+            </div>
+            <div>
+                <label>Pitch</label>
+                <select id="pitch">
+                    <option value="-6Hz">Deeper (-6Hz)</option>
+                    <option value="-3Hz" selected>Warmer (-3Hz)</option>
+                    <option value="+0Hz">Natural</option>
+                    <option value="+3Hz">Higher (+3Hz)</option>
+                </select>
+            </div>
         </div>
+
+        <button id="btn" onclick="generate()">Generate Voiceover</button>
+        <div id="loader">⚡ Generating voice...</div>
+        <audio id="player" controls></audio>
     </div>
 
-    <p class="small">Mark AI Studio · Simple voice generation</p>
-</main>
+    <script>
+        async function generate() {
+            const text = document.getElementById('text').value.trim();
+            if (!text) return alert("Please enter your script!");
 
-<script>
-const button = document.getElementById("generate");
-const status = document.getElementById("status");
-const result = document.getElementById("result");
-const player = document.getElementById("player");
-const download = document.getElementById("download");
-
-let audioUrl = null;
-
-async function generateVoice() {
-    const script = document.getElementById("script").value.trim();
-    const voice = document.getElementById("voice").value;
-
-    if (!script) {
-        status.textContent = "Please paste your script first.";
-        return;
-    }
-
-    if (script.length > 15000) {
-        status.textContent =
-            "Your script is too long. Please use fewer than 15,000 characters.";
-        return;
-    }
-
-    button.disabled = true;
-    button.textContent = "Generating...";
-    status.textContent = "Please wait while your voiceover is created.";
-    result.style.display = "none";
-
-    try {
-        const form = new FormData();
-        form.append("text", script);
-        form.append("voice", voice);
-
-        const response = await fetch("/generate", {
-            method: "POST",
-            body: form
-        });
-
-        if (!response.ok) {
-            let message = "Could not generate the voiceover.";
+            const btn = document.getElementById('btn');
+            const loader = document.getElementById('loader');
+            const player = document.getElementById('player');
+            btn.disabled = true;
+            loader.style.display = 'block';
+            player.style.display = 'none';
 
             try {
-                const data = await response.json();
-                message = data.detail || message;
-            } catch (e) {}
-
-            throw new Error(message);
+                const res = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: document.getElementById('voice').value,
+                        rate: document.getElementById('rate').value,
+                        pitch: document.getElementById('pitch').value
+                    })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const blob = await res.blob();
+                player.src = URL.createObjectURL(blob);
+                player.style.display = 'block';
+                player.play();
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+            btn.disabled = false;
+            loader.style.display = 'none';
         }
-
-        const blob = await response.blob();
-
-        if (!blob.size) {
-            throw new Error("The audio file was empty. Please try again.");
-        }
-
-        if (audioUrl) {
-            URL.revokeObjectURL(audioUrl);
-        }
-
-        audioUrl = URL.createObjectURL(blob);
-        player.src = audioUrl;
-        download.href = audioUrl;
-
-        result.style.display = "block";
-        status.textContent = "Your voiceover is ready!";
-
-    } catch (error) {
-        status.textContent = error.message || "Something went wrong.";
-    } finally {
-        button.disabled = false;
-        button.textContent = "Generate Voice";
-    }
-}
-</script>
+    </script>
 </body>
 </html>
 """
 
 
+class SpeechRequest(BaseModel):
+    text: str
+    voice: str = "en-US-AndrewMultilingualNeural"
+    rate: str = "+8%"
+    pitch: str = "-3Hz"
+
+
 @app.get("/", response_class=HTMLResponse)
-async def home():
-    return PAGE
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+async def ui():
+    opts = "".join(
+        f'<option value="{code}">{name}</option>' for name, code in VOICES.items()
+    )
+    return HTML_TEMPLATE.replace("__OPTIONS__", opts)
 
 
 @app.post("/generate")
-async def generate(
-    text: str = Form(...),
-    voice: str = Form("Andrew"),
-):
-    text = text.strip()
-
-    if not text:
-        raise HTTPException(
-            status_code=400,
-            detail="Please enter your script."
-        )
-
-    if len(text) > 15000:
-        raise HTTPException(
-            status_code=400,
-            detail="Your script exceeds the 15,000-character limit."
-        )
-
-    if voice not in VOICES:
-        raise HTTPException(
-            status_code=400,
-            detail="Please select a valid voice."
-        )
-
+async def generate(req: SpeechRequest):
+    voice = req.voice if req.voice in VOICES.values() else "en-US-AndrewNeural"
     try:
-        audio_data = io.BytesIO()
-
-        # Split long scripts into manageable chunks.
-        chunks = []
-        remaining = text
-
-        while remaining:
-            if len(remaining) <= 2500:
-                chunks.append(remaining)
-                break
-
-            split_at = remaining.rfind(" ", 0, 2500)
-
-            if split_at <= 0:
-                split_at = 2500
-
-            chunks.append(remaining[:split_at])
-            remaining = remaining[split_at:].strip()
-
-        for chunk in chunks:
-            communicator = edge_tts.Communicate(
-                chunk,
-                VOICES[voice]
-            )
-
-            async for item in communicator.stream():
-                if item["type"] == "audio":
-                    audio_data.write(item["data"])
-
-        if audio_data.tell() == 0:
-            raise HTTPException(
-                status_code=502,
-                detail="No audio was generated. Please try again."
-            )
-
-        audio_data.seek(0)
-
-        return StreamingResponse(
-            audio_data,
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition":
-                    'attachment; filename="mark-voiceover.mp3"'
-            }
+        communicate = edge_tts.Communicate(
+            req.text, voice, rate=req.rate, pitch=req.pitch
         )
+        audio = bytearray()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio.extend(chunk["data"])
+    except Exception as e:
+        return Response(content=f"Voice error: {e}", status_code=502)
 
-    except HTTPException:
-        raise
+    if not audio:
+        return Response(content="No audio returned.", status_code=502)
+    return Response(content=bytes(audio), media_type="audio/mpeg")
 
-    except Exception:
-        raise HTTPException(
-            status_code=502,
-            detail=(
-                "Voice generation failed. Check your internet connection "
-                "or try again later."
-            )
-        )
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

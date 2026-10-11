@@ -1,33 +1,27 @@
 import os
 import re
 import html
-import edge_tts
+import httpx
 from fastapi import FastAPI, Response, Form
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
-# ACOUSTIC TUNING: Mark Clone (Deeper, Energetic, Conversational)
-VOICE_NAME = "en-US-AndrewNeural"
-SPEED_RATE = "+8%"    # Brisk, energetic pacing
-PITCH_DEPTH = "-4Hz"  # Deeper mid-low tone
-VOLUME_BOOST = "+10%" # Stronger, confident projection
+ELEVEN_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
+VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
+MODEL_ID = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_v4")
+
 
 def sanitize_text(raw_text: str) -> str:
-    """Strips code snippets, HTML tags, and markdown so AI never reads code aloud."""
-    # 1. Remove markdown code blocks (```code```)
-    text = re.sub(r'```[\s\S]*?```', '', raw_text)
-    # 2. Remove inline code (`code`)
-    text = re.sub(r'`[^`]*`', '', text)
-    # 3. Remove HTML tags (<tag>)
-    text = re.sub(r'<[^>]+>', '', text)
-    # 4. Remove URLs
-    text = re.sub(r'http[s]?://\S+', '', text)
-    # 5. Unescape HTML entities (&amp; -> &)
+    """Strips code, HTML tags, and URLs so they are never read aloud."""
+    text = re.sub(r"```[\s\S]*?```", "", raw_text)
+    text = re.sub(r"`[^`]*`", "", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"https?://\S+", "", text)
     text = html.unescape(text)
-    # 6. Normalize whitespace
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
     return text
+
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -45,6 +39,8 @@ HTML_TEMPLATE = """
         label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
         textarea { width: 100%; background: #0b0f1a; border: 1px solid #334155; color: white; padding: 14px; border-radius: 12px; font-size: 0.95rem; resize: none; box-sizing: border-box; outline: none; line-height: 1.5; }
         textarea:focus { border-color: var(--accent); }
+        input[type=range] { width: 100%; margin-top: 4px; }
+        .row { margin-top: 16px; }
         button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: bold; margin-top: 18px; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #4f46e5; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -56,41 +52,51 @@ HTML_TEMPLATE = """
     <div class="card">
         <h1>🎙️ Mark AI Studio</h1>
         <p class="sub">Deep • Energetic • Natural Conversational</p>
-        
+
         <label>YOUR SCRIPT</label>
-        <textarea id="text" rows="6" placeholder="Paste your text here... Code snippets and tags will be cleaned out automatically so Mark reads smoothly."></textarea>
-        
+        <textarea id="text" rows="6" placeholder="Paste your text here... Code snippets and tags are cleaned out automatically."></textarea>
+
+        <div class="row">
+            <label>EXPRESSIVENESS (lower = more emotion): <span id="stabVal">0.40</span></label>
+            <input type="range" id="stability" min="0" max="1" step="0.05" value="0.4"
+                   oninput="document.getElementById('stabVal').textContent = Number(this.value).toFixed(2)">
+        </div>
+
         <button id="btn" onclick="generate()">Generate Voiceover</button>
-        <div id="status">⚡ Synthesizing Mark's voice...</div>
-        
+        <div id="status">⚡ Synthesizing voice...</div>
+
         <audio id="player" controls></audio>
     </div>
 
     <script>
         async function generate() {
             const text = document.getElementById('text').value.trim();
-            if(!text) return alert("Please paste or type a script first!");
-            
+            if (!text) return alert("Please paste or type a script first!");
+
             const btn = document.getElementById('btn');
             const status = document.getElementById('status');
             const player = document.getElementById('player');
-            
+
             btn.disabled = true;
             status.style.display = 'block';
             player.style.display = 'none';
-            
+
             const body = new FormData();
             body.append('text', text);
-            
+            body.append('stability', document.getElementById('stability').value);
+
             try {
                 const res = await fetch('/generate', { method: 'POST', body });
-                if(!res.ok) throw new Error("Generation error");
+                if (!res.ok) {
+                    const msg = await res.text();
+                    throw new Error(msg || "Generation error");
+                }
                 const blob = await res.blob();
                 player.src = URL.createObjectURL(blob);
                 player.style.display = 'block';
                 player.play();
-            } catch(e) {
-                alert("Error generating voice. Please try again.");
+            } catch (e) {
+                alert("Error: " + e.message);
             } finally {
                 btn.disabled = false;
                 status.style.display = 'none';
@@ -101,35 +107,54 @@ HTML_TEMPLATE = """
 </html>
 """
 
+
 @app.get("/", response_class=HTMLResponse)
 async def ui():
     return HTML_TEMPLATE
 
+
 @app.post("/generate")
-async def generate(text: str = Form(...)):
-    # Clean text to prevent code/tags from being read aloud
+async def generate(text: str = Form(...), stability: float = Form(0.4)):
+    if not ELEVEN_KEY or not VOICE_ID:
+        return Response(
+            content="Server missing ELEVENLABS_API_KEY or ELEVENLABS_VOICE_ID.",
+            status_code=500,
+        )
+
     clean_text = sanitize_text(text)
-    
     if not clean_text:
-        return Response(content=b"", status_code=400)
-    
-    # Generate speech natively using tuned parameters (NO manual XML wrapping)
-    communicate = edge_tts.Communicate(
-        text=clean_text, 
-        voice=VOICE_NAME, 
-        rate=SPEED_RATE, 
-        pitch=PITCH_DEPTH,
-        volume=VOLUME_BOOST
-    )
-    
-    audio = bytearray()
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            audio.extend(chunk["data"])
-            
-    return Response(content=bytes(audio), media_type="audio/mpeg")
+        return Response(content="Script is empty after cleaning.", status_code=400)
+
+    stability = max(0.0, min(1.0, stability))
+
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            r = await client.post(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
+                params={"output_format": "mp3_44100_128"},
+                headers={"xi-api-key": ELEVEN_KEY},
+                json={
+                    "text": clean_text,
+                    "model_id": MODEL_ID,
+                    "voice_settings": {
+                        "stability": stability,
+                        "similarity_boost": 0.8,
+                        "style": 0.3,
+                        "use_speaker_boost": True,
+                    },
+                },
+            )
+    except httpx.HTTPError as e:
+        return Response(content=f"Could not reach ElevenLabs: {e}", status_code=502)
+
+    if r.status_code != 200:
+        return Response(content=f"ElevenLabs error: {r.text}", status_code=r.status_code)
+
+    return Response(content=r.content, media_type="audio/mpeg")
+
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)

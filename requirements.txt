@@ -1,4 +1,4 @@
-fastapi
-uvicorn
-edge-tts
-python-multipart
+   fastapi>=0.100.0
+uvicorn>=0.22.0
+edge-tts>=6.1.9
+pydantic>=2.0.0

@@ -1,26 +1,42 @@
 import os
 import re
 import html
-import httpx
+import edge_tts
 from fastapi import FastAPI, Response, Form
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
-ELEVEN_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
-VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
-MODEL_ID = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_v4")
+DEFAULT_VOICE = "en-US-AndrewMultilingualNeural"
+
+VOICES = {
+    "en-US-AndrewMultilingualNeural": "Andrew Multilingual (most natural)",
+    "en-US-BrianMultilingualNeural": "Brian Multilingual (warm, casual)",
+    "en-US-AndrewNeural": "Andrew",
+    "en-US-BrianNeural": "Brian",
+    "en-US-ChristopherNeural": "Christopher (deep)",
+    "en-US-GuyNeural": "Guy",
+    "en-US-EricNeural": "Eric",
+    "en-US-RogerNeural": "Roger",
+    "en-US-SteffanNeural": "Steffan",
+}
 
 
 def sanitize_text(raw_text: str) -> str:
-    """Strips code, HTML tags, and URLs so they are never read aloud."""
     text = re.sub(r"```[\s\S]*?```", "", raw_text)
     text = re.sub(r"`[^`]*`", "", text)
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"https?://\S+", "", text)
     text = html.unescape(text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+    lines = []
+    for line in text.splitlines():
+        line = re.sub(r"[ \t]+", " ", line).strip()
+        if not line:
+            continue
+        if line[-1] not in ".!?:;,":
+            line += "."
+        lines.append(line)
+    return " ".join(lines).strip()
 
 
 HTML_TEMPLATE = """
@@ -37,11 +53,12 @@ HTML_TEMPLATE = """
         h1 { font-size: 1.4rem; margin-top: 0; margin-bottom: 4px; color: #a5b4fc; text-align: center; }
         p.sub { text-align: center; color: var(--muted); font-size: 0.82rem; margin-top: 0; margin-bottom: 20px; }
         label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        textarea { width: 100%; background: #0b0f1a; border: 1px solid #334155; color: white; padding: 14px; border-radius: 12px; font-size: 0.95rem; resize: none; box-sizing: border-box; outline: none; line-height: 1.5; }
-        textarea:focus { border-color: var(--accent); }
+        textarea, select { width: 100%; background: #0b0f1a; border: 1px solid #334155; color: white; padding: 14px; border-radius: 12px; font-size: 0.95rem; box-sizing: border-box; outline: none; }
+        textarea { resize: none; line-height: 1.5; }
+        textarea:focus, select:focus { border-color: var(--accent); }
         input[type=range] { width: 100%; margin-top: 4px; }
         .row { margin-top: 16px; }
-        button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: bold; margin-top: 18px; cursor: pointer; transition: background 0.2s; }
+        button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: bold; margin-top: 18px; cursor: pointer; }
         button:hover { background: #4f46e5; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         #status { text-align: center; font-size: 0.85rem; margin-top: 14px; color: #a5b4fc; display: none; }
@@ -54,17 +71,33 @@ HTML_TEMPLATE = """
         <p class="sub">Deep • Energetic • Natural Conversational</p>
 
         <label>YOUR SCRIPT</label>
-        <textarea id="text" rows="6" placeholder="Paste your text here... Code snippets and tags are cleaned out automatically."></textarea>
+        <textarea id="text" rows="6" placeholder="Paste your text here... Each new line becomes a natural pause."></textarea>
 
         <div class="row">
-            <label>EXPRESSIVENESS (lower = more emotion): <span id="stabVal">0.40</span></label>
-            <input type="range" id="stability" min="0" max="1" step="0.05" value="0.4"
-                   oninput="document.getElementById('stabVal').textContent = Number(this.value).toFixed(2)">
+            <label>VOICE</label>
+            <select id="voice">__VOICE_OPTIONS__</select>
+        </div>
+
+        <div class="row">
+            <label>SPEED: <span id="rateVal">+8</span>%</label>
+            <input type="range" id="rate" min="-20" max="30" step="1" value="8"
+                   oninput="document.getElementById('rateVal').textContent = this.value">
+        </div>
+
+        <div class="row">
+            <label>PITCH (lower = deeper): <span id="pitchVal">-4</span> Hz</label>
+            <input type="range" id="pitch" min="-20" max="10" step="1" value="-4"
+                   oninput="document.getElementById('pitchVal').textContent = this.value">
+        </div>
+
+        <div class="row">
+            <label>VOLUME: <span id="volVal">+10</span>%</label>
+            <input type="range" id="volume" min="0" max="30" step="1" value="10"
+                   oninput="document.getElementById('volVal').textContent = this.value">
         </div>
 
         <button id="btn" onclick="generate()">Generate Voiceover</button>
-        <div id="status">⚡ Synthesizing voice...</div>
-
+        <div id="status">⚡ Creating voice...</div>
         <audio id="player" controls></audio>
     </div>
 
@@ -83,7 +116,10 @@ HTML_TEMPLATE = """
 
             const body = new FormData();
             body.append('text', text);
-            body.append('stability', document.getElementById('stability').value);
+            body.append('voice', document.getElementById('voice').value);
+            body.append('rate', document.getElementById('rate').value);
+            body.append('pitch', document.getElementById('pitch').value);
+            body.append('volume', document.getElementById('volume').value);
 
             try {
                 const res = await fetch('/generate', { method: 'POST', body });
@@ -110,47 +146,50 @@ HTML_TEMPLATE = """
 
 @app.get("/", response_class=HTMLResponse)
 async def ui():
-    return HTML_TEMPLATE
+    options = "".join(
+        f'<option value="{vid}"{" selected" if vid == DEFAULT_VOICE else ""}>{name}</option>'
+        for vid, name in VOICES.items()
+    )
+    return HTML_TEMPLATE.replace("__VOICE_OPTIONS__", options)
 
 
 @app.post("/generate")
-async def generate(text: str = Form(...), stability: float = Form(0.4)):
-    if not ELEVEN_KEY or not VOICE_ID:
-        return Response(
-            content="Server missing ELEVENLABS_API_KEY or ELEVENLABS_VOICE_ID.",
-            status_code=500,
-        )
-
+async def generate(
+    text: str = Form(...),
+    voice: str = Form(DEFAULT_VOICE),
+    rate: int = Form(8),
+    pitch: int = Form(-4),
+    volume: int = Form(10),
+):
     clean_text = sanitize_text(text)
     if not clean_text:
         return Response(content="Script is empty after cleaning.", status_code=400)
 
-    stability = max(0.0, min(1.0, stability))
+    if voice not in VOICES:
+        voice = DEFAULT_VOICE
+    rate = max(-50, min(50, rate))
+    pitch = max(-50, min(50, pitch))
+    volume = max(-50, min(50, volume))
 
     try:
-        async with httpx.AsyncClient(timeout=120) as client:
-            r = await client.post(
-                f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
-                params={"output_format": "mp3_44100_128"},
-                headers={"xi-api-key": ELEVEN_KEY},
-                json={
-                    "text": clean_text,
-                    "model_id": MODEL_ID,
-                    "voice_settings": {
-                        "stability": stability,
-                        "similarity_boost": 0.8,
-                        "style": 0.3,
-                        "use_speaker_boost": True,
-                    },
-                },
-            )
-    except httpx.HTTPError as e:
-        return Response(content=f"Could not reach ElevenLabs: {e}", status_code=502)
+        communicate = edge_tts.Communicate(
+            text=clean_text,
+            voice=voice,
+            rate=f"{rate:+d}%",
+            pitch=f"{pitch:+d}Hz",
+            volume=f"{volume:+d}%",
+        )
+        audio = bytearray()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio.extend(chunk["data"])
+    except Exception as e:
+        return Response(content=f"Voice error: {e}", status_code=502)
 
-    if r.status_code != 200:
-        return Response(content=f"ElevenLabs error: {r.text}", status_code=r.status_code)
+    if not audio:
+        return Response(content="No audio was returned. Please try again.", status_code=502)
 
-    return Response(content=r.content, media_type="audio/mpeg")
+    return Response(content=bytes(audio), media_type="audio/mpeg")
 
 
 if __name__ == "__main__":

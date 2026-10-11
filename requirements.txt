@@ -1,1 +1,4 @@
-pip install fastapi uvicorn edge-tts python-multipart
+fastapi
+uvicorn
+edge-tts
+python-multipart

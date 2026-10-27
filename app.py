@@ -1,9 +1,18 @@
 import os
+import re
 import edge_tts
 from fastapi import FastAPI, Form, Response
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
+
+def preprocess_for_tts(text: str) -> str:
+    """Preprocesses text to ensure edge-tts pronounces Nigerian food words correctly."""
+    # Replace 'eba' (case-insensitive) with phonetic spelling
+    text = re.sub(r'\beba\b', 'Eh-bah', text, flags=re.IGNORECASE)
+    # Replace 'egusi' with phonetic spelling for better flow
+    text = re.sub(r'\begusi\b', 'Eh-goo-see', text, flags=re.IGNORECASE)
+    return text
 
 HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -16,7 +25,6 @@ HTML = """<!DOCTYPE html>
 
         * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
 
-        /* Cooler Color Palette */
         body {
             margin: 0; padding: 20px; min-height: 100vh;
             background: linear-gradient(135deg, #0B132B, #1C2541, #3A506B);
@@ -44,7 +52,6 @@ HTML = """<!DOCTYPE html>
             animation: dropIn 0.8s ease-out;
         }
 
-        /* Image Gallery */
         .gallery {
             display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;
         }
@@ -74,7 +81,6 @@ HTML = """<!DOCTYPE html>
         }
         button.calc-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(231, 111, 81, 0.4); }
 
-        /* Results & Recipe */
         #results { display: none; margin-top: 25px; animation: slideUp 0.5s ease-out forwards; }
         
         .box {
@@ -89,7 +95,6 @@ HTML = """<!DOCTYPE html>
         
         .highlight { color: #E76F51; font-weight: bold; }
 
-        /* Audio Button */
         button.play-btn {
             background: #2A9D8F; color: white; border: none; padding: 12px 20px;
             font-size: 1em; font-weight: bold; border-radius: 10px; cursor: pointer;
@@ -106,8 +111,6 @@ HTML = """<!DOCTYPE html>
 <body>
 
     <div class="container">
-        
-        <!-- High Quality Eba & Egusi Images -->
         <div class="gallery">
             <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Eba_and_Efo_riro_soup.jpg" alt="Eba Dish">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Egusi_soup_and_eba.jpg/800px-Egusi_soup_and_eba.jpg" alt="Eba and Egusi">
@@ -120,7 +123,6 @@ HTML = """<!DOCTYPE html>
         <button class="calc-btn" onclick="calculateEba()">Calculate & Show Recipe</button>
 
         <div id="results">
-            <!-- Output Math -->
             <div class="box">
                 <h3>📊 Calculated Measurements</h3>
                 <p>👨‍👩‍👧 For <span id="outPeople" class="highlight"></span> people, you need:</p>
@@ -131,7 +133,6 @@ HTML = """<!DOCTYPE html>
                 </ul>
             </div>
 
-            <!-- Detailed Recipe -->
             <div class="box">
                 <h3>🥘 Ingredients & Tools Needed</h3>
                 <ul>
@@ -144,32 +145,12 @@ HTML = """<!DOCTYPE html>
 
             <div class="box">
                 <h3>📖 Step-by-Step Preparation</h3>
-                
                 <button class="play-btn" id="playBtn" onclick="playVoice()">
                     🔊 Play Audio Instructions (Female Voice)
                 </button>
                 <audio id="audioPlayer" style="width: 100%; margin-top: 15px; display: none;" controls></audio>
 
                 <ol>
-
-import re
-
-PRONUNCIATION_MAP = {
-    r'\beba\b': 'Eh-bah',
-    r'\bEba\b': 'Eh-bah',
-    r'\begusi\b': 'Eh-goo-see',
-    r'\bEgusi\b': 'Eh-goo-see',
-}
-
-def preprocess_text_for_tts(text: str) -> str:
-    for word_pattern, replacement in PRONUNCIATION_MAP.items():
-        text = re.sub(word_pattern, replacement, text)
-    return text
-
-# Example usage before calling your synthesis function:
-input_text = "Serve hot Eba with soup."
-clean_text = preprocess_text_for_tts(input_text)
-# Result: "Serve hot Eh-bah with soup."
                     <li>Put your clean pot on the burner. Pour the required water into the pot and let it boil for about <b>5 to 7 minutes</b> until it is bubbling hot.</li>
                     <li>Turn off the heat or bring the pot down.</li>
                     <li>Gradually pour the Garri into the hot water, spreading it evenly across the surface.</li>
@@ -182,7 +163,6 @@ clean_text = preprocess_text_for_tts(input_text)
     </div>
 
     <script>
-        // Store recipe script globally for the audio
         let recipeScript = "";
 
         function calculateEba() {
@@ -192,8 +172,6 @@ clean_text = preprocess_text_for_tts(input_text)
                 return;
             }
 
-            // Updated Math based on your instructions (2 cups garri to 2.5/3 cups water)
-            // Ratio: 1 cup garri needs 1.35 cups of water
             let garri = people; 
             let water = (garri * 1.35).toFixed(1); 
             let cost = garri * 200;
@@ -203,17 +181,13 @@ clean_text = preprocess_text_for_tts(input_text)
             document.getElementById('outWater').innerText = water;
             document.getElementById('outCost').innerText = cost;
 
-           
-
- // Generate the script for the AI to read
             recipeScript = `Welcome to the eba calculation guide. You will need ${garri} cups of Garri, and ${water} cups of clean water. 
             Step 1. Put your pot on the burner, pour in the water, and let it boil for about 5 to 7 minutes until it is bubbling hot. 
             Step 2. Turn off the heat.
-
-Step 3. Gradually pour your Garri into the hot water, spreading it evenly. 
+            Step 3. Gradually pour your Garri into the hot water, spreading it evenly. 
             Step 4. Cover it for 1 minute to allow the Garri to soften. 
-            Step 5. Use your  wooden spatula, to turn and stir vigorously until smooth and lump-free. 
-            Finally, mold it into your desired shape and serve hot with delicious Egusi soup!`;
+            Step 5. Use your wooden spatula, to turn and stir vigorously until smooth and lump-free. 
+            Finally, mold it into your desired shape and serve hot with delicious egusi soup!`;
 
             document.getElementById('results').style.display = 'block';
         }
@@ -238,6 +212,7 @@ Step 3. Gradually pour your Garri into the hot water, spreading it evenly.
                 player.style.display = 'block';
                 player.play();
                 btn.innerText = "🔊 Audio Generated!";
+                btn.disabled = false;
             } catch (e) {
                 alert("Audio generation failed. Please try again.");
                 btn.innerText = "🔊 Play Audio Instructions";
@@ -254,8 +229,10 @@ def home():
 
 @app.post("/generate")
 async def generate(text: str = Form(...)):
-    # Uses Ezinne: A natural Half Nigerian Half United Kingdom Female Voice!
-    communicate = edge_tts.Communicate(text, "en-NG-EzinneNeural", rate="+0%", pitch="+0Hz")
+    # Automatically fix pronunciation before sending to edge-tts
+    cleaned_text = preprocess_for_tts(text)
+
+    communicate = edge_tts.Communicate(cleaned_text, "en-NG-EzinneNeural", rate="+0%", pitch="+0Hz")
     audio = bytearray()
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":

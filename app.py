@@ -34,7 +34,7 @@ HTML = """<!DOCTYPE html>
         }
 
         .container {
-            background: var(--white);
+            background: var(--purple);
             padding: 24px;
             border-radius: 20px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.2);

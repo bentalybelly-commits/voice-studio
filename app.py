@@ -164,7 +164,7 @@ HTML = """<!DOCTYPE html>
             <div class="result-item">👨‍👩‍👧 Estimated Wraps: <span id="outWraps"></span></div>
             <div class="result-item">🍚 Garri Needed: <span id="outGarri"></span> Cups</div>
             <div class="result-item">💧 Hot Water Needed: <span id="outWaterCups"></span> Cups (<span id="outWaterLitres"></span> Litres)</div>
-            <div class="result-item">💵 Total Cost (₦200/cup): <span id="outCost"></span> ₦</div>
+            <div class="result-item">💵 Total Cost (₦50/cup): <span id="outCost"></span> ₦</div>
             
             <div class="steps-box">
                 <h3>Steps To Make IT:</h3>

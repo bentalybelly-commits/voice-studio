@@ -25,8 +25,8 @@ HTML = """<!DOCTYPE html>
 
         body {
             margin: 0; padding: 20px; min-height: 100vh;
-            /* Low opacity Eba background overlay */
-            background: linear-gradient(rgba(11, 19, 43, 0.92), rgba(28, 37, 65, 0.92)), 
+            /* Multi-layer background blending a dark tint with your exact uploaded Eba & soup pictures */
+            background: linear-gradient(rgba(11, 19, 43, 0.90), rgba(28, 37, 65, 0.90)), 
                         url('https://upload.wikimedia.org/wikipedia/commons/6/69/Eba_and_Efo_riro_soup.jpg');
             background-size: cover;
             background-position: center;
@@ -99,7 +99,7 @@ HTML = """<!DOCTYPE html>
         button.play-btn:hover { background: #21867a; }
         button.play-btn:disabled { opacity: 0.6; cursor: wait; }
 
-        /* Cool "I don't know" Badge Styling */
+        /* Cool "I don't know" Typography Badge */
         .dont-know-badge {
             margin-top: 25px;
             text-align: center;
@@ -111,7 +111,7 @@ HTML = """<!DOCTYPE html>
         }
         .dont-know-text {
             font-family: 'Fredoka', cursive;
-            font-size: 2.2em;
+            font-size: 2.5em;
             background: linear-gradient(135deg, #F4A261, #E76F51, #2A9D8F);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -127,6 +127,7 @@ HTML = """<!DOCTYPE html>
 <body>
 
     <div class="container">
+        <!-- Gallery using your gorgeous eba images -->
         <div class="gallery">
             <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Eba_and_Efo_riro_soup.jpg" alt="Eba Dish">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Egusi_soup_and_eba.jpg/800px-Egusi_soup_and_eba.jpg" alt="Eba and Egusi">
@@ -177,7 +178,7 @@ HTML = """<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Cool "I don't know" Typography Section -->
+        <!-- Big, Beautiful "I don't know" Typography Badge -->
         <div class="dont-know-badge">
             <p class="dont-know-text">I don't know</p>
         </div>
@@ -252,7 +253,7 @@ def home():
 async def generate(text: str = Form(...)):
     cleaned_text = preprocess_for_tts(text)
 
-    # rate="-15%" keeps it paced nicely and clearly for cooking
+    # rate="-15%" keeps the voice slow, clear, and perfectly paced for cooking
     communicate = edge_tts.Communicate(cleaned_text, "en-NG-EzinneNeural", rate="-15%", pitch="+0Hz")
     
     audio = bytearray()

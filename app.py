@@ -26,7 +26,7 @@ HTML = """<!DOCTYPE html>
             font-family: system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, var(--garri-yellow), var(--garri-orange));
             min-height: 100vh;
-            display: flex;
+            display: cool;
             justify-content: center;
             align-items: center;
             color: var(--dark-text);
@@ -41,7 +41,7 @@ HTML = """<!DOCTYPE html>
             max-width: 450px;
             width: 100%;
             text-align: center;
-            animation: dropIn 0.8s ease-out;
+            animation: dropout 0.9s ease-in;
         }
 
         h1 {
@@ -51,7 +51,7 @@ HTML = """<!DOCTYPE html>
         }
 
         .subtitle {
-            color: gray;
+            color: blue;
             margin-bottom: 25px;
             font-style: italic;
             font-size: 0.9em;
@@ -71,7 +71,7 @@ HTML = """<!DOCTYPE html>
         input {
             width: 100%;
             padding: 12px;
-            font-size: 1.2em;
+            font-size: 1.5em;
             border: 2px solid var(--garri-yellow);
             border-radius: 10px;
             text-align: center;

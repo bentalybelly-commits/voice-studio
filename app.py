@@ -8,9 +8,7 @@ app = FastAPI()
 
 def preprocess_for_tts(text: str) -> str:
     """Preprocesses text to ensure edge-tts pronounces Nigerian food words correctly."""
-    # Replace 'eba' (case-insensitive) with phonetic spelling
     text = re.sub(r'\beba\b', 'Eh-bah', text, flags=re.IGNORECASE)
-    # Replace 'egusi' with phonetic spelling for better flow
     text = re.sub(r'\begusi\b', 'Eh-goo-see', text, flags=re.IGNORECASE)
     return text
 
@@ -139,7 +137,7 @@ HTML = """<!DOCTYPE html>
                     <li><b>Garri (Cassava Flakes):</b> White or Yellow/Bendel based on preference.</li>
                     <li><b>Clean Water:</b> Filtered and ready to boil.</li>
                     <li><b>Mixing Bowl / Pot:</b> Heat-proof plastic, ceramic bowl, or stainless pot.</li>
-                    <li><b>Omorogun:</b> A strong wooden spatula or turning stick.</li>
+                    <li><b>Omorogun:</b> A wooden spatula or turning stick.</li>
                 </ul>
             </div>
 
@@ -229,10 +227,11 @@ def home():
 
 @app.post("/generate")
 async def generate(text: str = Form(...)):
-    # Automatically fix pronunciation before sending to edge-tts
     cleaned_text = preprocess_for_tts(text)
 
-    communicate = edge_tts.Communicate(cleaned_text, "en-NG-EzinneNeural", rate="+0%", pitch="+0Hz")
+    # rate="-15%" slows down the speech tempo. Adjust to "-20%" if you want it even slower.
+    communicate = edge_tts.Communicate(cleaned_text, "en-NG-EzinneNeural", rate="-15%", pitch="+0Hz")
+    
     audio = bytearray()
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":

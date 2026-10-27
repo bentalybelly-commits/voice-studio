@@ -14,7 +14,7 @@ HTML = """<!DOCTYPE html>
     <style>
         :root {
             --garri-yellow: #FFB703;
-            --garri-orange: #FB8500;
+            --garri-white: #FB8500;
             --naija-green: #2A9D8F;
             --dark-text: #023047;
             --white: #FFFFFF;

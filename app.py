@@ -233,7 +233,7 @@ def home():
 
 @app.post("/generate")
 async def generate(text: str = Form(...)):
-    # Uses Ezinne: A natural Nigerian Female Voice!
+    # Uses Ezinne: A natural Half Nigerian Half United Kingdom Female Voice!
     communicate = edge_tts.Communicate(text, "en-NG-EzinneNeural", rate="+0%", pitch="+0Hz")
     audio = bytearray()
     async for chunk in communicate.stream():

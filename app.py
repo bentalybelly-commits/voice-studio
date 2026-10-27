@@ -184,7 +184,26 @@ HTML = """<!DOCTYPE html>
             document.getElementById('outWater').innerText = water;
             document.getElementById('outCost').innerText = cost;
 
-            // Generate the script for the AI to read
+           import re
+
+PRONUNCIATION_MAP = {
+    r'\beba\b': 'Eh-bah',
+    r'\bEba\b': 'Eh-bah',
+    r'\begusi\b': 'Eh-goo-see',
+    r'\bEgusi\b': 'Eh-goo-see',
+}
+
+def preprocess_text_for_tts(text: str) -> str:
+    for word_pattern, replacement in PRONUNCIATION_MAP.items():
+        text = re.sub(word_pattern, replacement, text)
+    return text
+
+# Example usage before calling your synthesis function:
+input_text = "Serve hot Eba with soup."
+clean_text = preprocess_text_for_tts(input_text)
+# Result: "Serve hot Eh-bah with soup."
+
+ // Generate the script for the AI to read
             recipeScript = `Welcome to the eba calculation guide. You will need ${garri} cups of Garri, and ${water} cups of clean water. 
             Step 1. Put your pot on the burner, pour in the water, and let it boil for about 5 to 7 minutes until it is bubbling hot. 
             Step 2. Turn off the heat.
@@ -241,24 +260,6 @@ async def generate(text: str = Form(...)):
             audio.extend(chunk["data"])
     return Response(content=bytes(audio), media_type="audio/mpeg")
 
-import re
-
-PRONUNCIATION_MAP = {
-    r'\beba\b': 'Eh-bah',
-    r'\bEba\b': 'Eh-bah',
-    r'\begusi\b': 'Eh-goo-see',
-    r'\bEgusi\b': 'Eh-goo-see',
-}
-
-def preprocess_text_for_tts(text: str) -> str:
-    for word_pattern, replacement in PRONUNCIATION_MAP.items():
-        text = re.sub(word_pattern, replacement, text)
-    return text
-
-# Example usage before calling your synthesis function:
-input_text = "Serve hot Eba with soup."
-clean_text = preprocess_text_for_tts(input_text)
-# Result: "Serve hot Eh-bah with soup."
 
 if __name__ == "__main__":
     import uvicorn

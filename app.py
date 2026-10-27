@@ -230,7 +230,7 @@ async def generate(text: str = Form(...)):
     cleaned_text = preprocess_for_tts(text)
 
     # rate="-15%" slows down the speech tempo. Adjust to "-20%" if you want it even slower.
-    communicate = edge_tts.Communicate(cleaned_text, "en-NG-EzinneNeural", rate="-15%", pitch="+0Hz")
+    communicate = edge_tts.Communicate(cleaned_text, "en-UK-EzinneNeural", rate="-15%", pitch="+0Hz")
     
     audio = bytearray()
     async for chunk in communicate.stream():

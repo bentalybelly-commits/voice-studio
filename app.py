@@ -151,6 +151,25 @@ HTML = """<!DOCTYPE html>
                 <audio id="audioPlayer" style="width: 100%; margin-top: 15px; display: none;" controls></audio>
 
                 <ol>
+
+import re
+
+PRONUNCIATION_MAP = {
+    r'\beba\b': 'Eh-bah',
+    r'\bEba\b': 'Eh-bah',
+    r'\begusi\b': 'Eh-goo-see',
+    r'\bEgusi\b': 'Eh-goo-see',
+}
+
+def preprocess_text_for_tts(text: str) -> str:
+    for word_pattern, replacement in PRONUNCIATION_MAP.items():
+        text = re.sub(word_pattern, replacement, text)
+    return text
+
+# Example usage before calling your synthesis function:
+input_text = "Serve hot Eba with soup."
+clean_text = preprocess_text_for_tts(input_text)
+# Result: "Serve hot Eh-bah with soup."
                     <li>Put your clean pot on the burner. Pour the required water into the pot and let it boil for about <b>5 to 7 minutes</b> until it is bubbling hot.</li>
                     <li>Turn off the heat or bring the pot down.</li>
                     <li>Gradually pour the Garri into the hot water, spreading it evenly across the surface.</li>
@@ -184,24 +203,7 @@ HTML = """<!DOCTYPE html>
             document.getElementById('outWater').innerText = water;
             document.getElementById('outCost').innerText = cost;
 
-           import re
-
-PRONUNCIATION_MAP = {
-    r'\beba\b': 'Eh-bah',
-    r'\bEba\b': 'Eh-bah',
-    r'\begusi\b': 'Eh-goo-see',
-    r'\bEgusi\b': 'Eh-goo-see',
-}
-
-def preprocess_text_for_tts(text: str) -> str:
-    for word_pattern, replacement in PRONUNCIATION_MAP.items():
-        text = re.sub(word_pattern, replacement, text)
-    return text
-
-# Example usage before calling your synthesis function:
-input_text = "Serve hot Eba with soup."
-clean_text = preprocess_text_for_tts(input_text)
-# Result: "Serve hot Eh-bah with soup."
+           
 
  // Generate the script for the AI to read
             recipeScript = `Welcome to the eba calculation guide. You will need ${garri} cups of Garri, and ${water} cups of clean water. 

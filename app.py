@@ -10,7 +10,7 @@ HTML = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBA Calculator App</title>
+    <title>EBA Calculator Pro</title>
     <style>
         :root {
             --garri-yellow: #FFB703;
@@ -24,196 +24,76 @@ HTML = """<!DOCTYPE html>
             margin: 0;
             padding: 16px;
             font-family: system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, var(--garri-yellow), var(--garri-orange));
+            /* Cool Moving Background Animation */
+            background: linear-gradient(-45deg, #FFB703, #FB8500, #ff9e00, #ffc300);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
             min-height: 100vh;
-            display: cool;
+            display: flex;
             justify-content: center;
             align-items: center;
             color: var(--dark-text);
             box-sizing: border-box;
         }
 
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .container {
-            background: var(--purple);
-            padding: 24px;
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-            max-width: 450px;
+            background: var(--white);
+            padding: 30px 24px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 480px;
             width: 100%;
             text-align: center;
-            animation: dropout 0.9s ease-in;
+            /* Entrance Animation */
+            animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8) translateY(-50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
         }
 
         h1 {
             color: var(--garri-orange);
             margin-bottom: 5px;
-            font-size: 2em;
+            font-size: 2.2em;
+            line-height: 1.1;
+            text-shadow: 2px 2px 4px rgba(251, 133, 0, 0.2);
         }
 
         .subtitle {
-            color: blue;
+            color: #6b7280;
             margin-bottom: 25px;
             font-style: italic;
-            font-size: 0.9em;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
+            font-size: 0.95em;
         }
 
         label {
-            font-weight: bold;
-            font-size: 1em;
+            font-weight: 800;
+            font-size: 1.05em;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            color: var(--dark-text);
         }
 
         input {
             width: 100%;
-            padding: 12px;
-            font-size: 1.5em;
-            border: 2px solid var(--garri-yellow);
-            border-radius: 10px;
+            padding: 14px;
+            font-size: 1.2em;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
             text-align: center;
             outline: none;
             box-sizing: border-box;
+            transition: all 0.3s ease;
         }
 
         input:focus {
-            border-color: var(--naija-green);
-        }
-
-        button {
-            margin-top: 15px;
-            background: var(--naija-green);
-            color: var(--white);
-            border: none;
-            padding: 15px 25px;
-            font-size: 1.1em;
-            font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 5px 15px rgba(42, 157, 143, 0.4);
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        #results {
-            display: none;
-            margin-top: 25px;
-            background: #fdf6e3;
-            padding: 20px;
-            border-radius: 15px;
-            border-left: 5px solid var(--garri-orange);
-            text-align: left;
-            animation: slideUp 0.5s ease-out forwards;
-        }
-
-        .result-item {
-            margin: 10px 0;
-            font-size: 1.05em;
-        }
-
-        .result-item span {
-            font-weight: bold;
-            color: var(--garri-orange);
-        }
-
-        .steps-box {
-            margin-top: 20px;
-            background: #e9f5f4;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: left;
-            border-left: 5px solid var(--naija-green);
-        }
-
-        .steps-box h3 {
-            margin-top: 0;
-            color: var(--naija-green);
-        }
-
-        @keyframes dropIn {
-            0% { transform: translateY(-30px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            0% { transform: translateY(20px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h1>=== EBA ===<br>CALCULATOR 🥣</h1>
-        <p class="subtitle">Compute Garri and Water for EBA</p>
-
-        <div class="input-group">
-            <label for="peopleInput">Number of people eating:</label>
-            <input type="number" id="peopleInput" placeholder="Enter number of people" min="1">
-            <button onclick="computeEba()">Compute EBA ( )</button>
-        </div>
-
-        <div id="results">
-            <h3 style="text-align: center; margin-top: 0; color: var(--dark-text);">-- Output --</h3>
-            <div class="result-item">👨‍👩‍👧 Estimated Wraps: <span id="outWraps"></span></div>
-            <div class="result-item">🍚 Garri Needed: <span id="outGarri"></span> Cups</div>
-            <div class="result-item">💧 Hot Water Needed: <span id="outWaterCups"></span> Cups (<span id="outWaterLitres"></span> Litres)</div>
-            <div class="result-item">💵 Total Cost (₦50/cup): <span id="outCost"></span> ₦</div>
-            
-            <div class="steps-box">
-                <h3>Steps To Make IT:</h3>
-                <ol>
-                    <li>Boil water</li>
-                    <li>Pour Garri into cups</li>
-                    <li>Stir/Turn EBA</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function computeEba() {
-            let people = document.getElementById('peopleInput').value;
-            people = parseInt(people);
-
-            if (isNaN(people) || people <= 0) {
-                alert("Please enter a valid number of people!");
-                return;
-            }
-
-            let wraps = people;
-            let garri_cups = people;
-            let water_cups = garri_cups * 2;
-            let water_litres = water_cups * 0.25;
-            let price_per_cup = 50;
-            let total_cost = garri_cups * price_per_cup;
-
-            document.getElementById('outWraps').innerText = wraps;
-            document.getElementById('outGarri').innerText = garri_cups;
-            document.getElementById('outWaterCups').innerText = water_cups;
-            document.getElementById('outWaterLitres').innerText = water_litres;
-            document.getElementById('outCost').innerText = total_cost;
-
-            let resultsDiv = document.getElementById('results');
-            resultsDiv.style.display = 'none';
-            setTimeout(() => {
-                resultsDiv.style.display = 'block';
-            }, 50);
-        }
-    </script>
-</body>
-</html>"""
-
-@app.get("/", response_class=HTMLResponse)
-def home():
-    return HTML
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+            border-color: var(--garri-orange);
+            box-shadow: 0 0 15px 

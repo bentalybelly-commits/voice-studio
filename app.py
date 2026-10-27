@@ -186,10 +186,12 @@ HTML = """<!DOCTYPE html>
 
             // Generate the script for the AI to read
             recipeScript = `Welcome to the eba calculation guide. You will need ${garri} cups of Garri, and ${water} cups of clean water. 
-            Step 1. Put your pot on the fire, pour in the water, and let it boil for about 5 to 7 minutes until it is bubbling hot. 
-            Step 2. Turn off the heat. Gradually pour your Garri into the hot water, spreading it evenly. 
-            Step 3. Cover it for 1 minute to allow the Garri to soften. 
-            Step 4. Use your Omorogun, or wooden spatula, to turn and stir vigorously until smooth and lump-free. 
+            Step 1. Put your pot on the burner, pour in the water, and let it boil for about 5 to 7 minutes until it is bubbling hot. 
+            Step 2. Turn off the heat.
+
+Step 3. Gradually pour your Garri into the hot water, spreading it evenly. 
+            Step 4. Cover it for 1 minute to allow the Garri to soften. 
+            Step 5. Use your  wooden spatula, to turn and stir vigorously until smooth and lump-free. 
             Finally, mold it into your desired shape and serve hot with delicious Egusi soup!`;
 
             document.getElementById('results').style.display = 'block';

@@ -413,4 +413,321 @@ const HISTORY = [
         title: "🍲 Garri Types and Soups",
         lines: [
             "Yellow garri includes red palm oil, adding lipophilic beta-carotene and extra flavor.",
-            "White gar
+            "White garri relies purely on native cassava starch without added lipid molecules.",
+            "Yoruba culinary traditions paired eba with Ewedu and Gbegiri to form Abula.",
+            "Ewedu provides mucilaginous polysaccharide slip to lower friction during swallowing.",
+            "Gbegiri offers emulsified protein density from slow-cooked, pureed cowpeas.",
+            "Igbo traditions favor yellow garri (Utara Garri) paired with rich Egusi or Ogbono.",
+            "Ogbono seeds release long-chain mucilage polymers that maximize soup elasticity and grip.",
+            "Eba acts as a biodegradable, edible utensil engineered for optimal soup transport.",
+            "Diners form a spherical mass, press a central indentation, and scoop up liquid.",
+            "The indentation acts as a micro-reservoir for high-viscosity broth and protein chunks."
+        ]
+    },
+    {
+        title: "🏭 Eba Through Time",
+        lines: [
+            "Industrial mechanical graters and hydraulic presses scaled garri synthesis in the 20th century.",
+            "During the Nigerian Civil War, garri’s stable shelf-life provided emergency caloric security.",
+            "Today, biofortified cassava crops deliver built-in provitamin A directly to the starch.",
+            "Modern chefs mold eba into sleek geometric forms for high-end culinary presentations.",
+            "Water temperature control remains the supreme physical variable in eba synthesis.",
+            "Sub-boiling water fails to initiate starch gelatinization, leaving gritty, raw particles behind.",
+            "Boiling H₂O forces amylose molecules to expand and form a cohesive viscoelastic matrix.",
+            "Whether in Lagos or London, eba remains the ultimate speed-of-light carbohydrate fuel.",
+            "It combines historical agricultural resilience, structural polymer physics, and absolute comfort.",
+            "Simple to prepare yet deeply scientific, eba remains West Africa’s most iconic edible gel."
+        ]
+    }
+];
+
+const TIMELINE = [
+    {when: "Long ago, in South America", text: "Tribes learn to remove the poison from cassava by grating and squeezing it."},
+    {when: "16th century", text: "Portuguese traders bring cassava to West Africa. It grows well even in poor soil."},
+    {when: "19th century", text: "Afro-Brazilians who returned to Africa bring the roasting method for cassava flour."},
+    {when: "20th century", text: "Machines for grating and pressing cassava make garri in much bigger amounts."},
+    {when: "Nigerian Civil War", text: "Garri lasts a long time without spoiling, so it becomes an emergency food."},
+    {when: "Today", text: "New cassava crops carry extra vitamin A, chefs mold eba into modern shapes, and people eat it from Lagos to London."}
+];
+
+const GLOSSARY = [
+    ["Cassava", "A starchy root. It must be processed before eating because raw cassava has poison in it."],
+    ["Garri", "Dry cassava flakes made by grating, fermenting, pressing and roasting cassava."],
+    ["Fermentation", "Letting the cassava mash sit for 2 to 3 days so good bacteria make it sour and break down the poison."],
+    ["Omorogun", "The strong wooden spatula used to stir and turn eba."],
+    ["Ewedu", "A slippery green soup that helps eba slide down easily."],
+    ["Gbegiri", "A smooth soup made from slow-cooked, mashed beans."],
+    ["Abula", "Ewedu and Gbegiri served together, a Yoruba favourite."],
+    ["Egusi", "A rich soup made from ground melon seeds."],
+    ["Ogbono", "A soup made from ogbono seeds. It is thick and stretchy."]
+];
+
+const SOUPS = [
+    ["Abula (Yoruba favourite)", "Eba with Ewedu and Gbegiri. The Ewedu is slippery so the eba slides down easily. The Gbegiri is a smooth, rich soup made from slow-cooked mashed beans."],
+    ["Egusi soup (Igbo tradition)", "Igbo tradition pairs yellow garri with rich Egusi soup, which is made from ground melon seeds."],
+    ["Ogbono soup (Igbo tradition)", "Ogbono seeds make the soup thick and stretchy, so it grips the eba well."]
+];
+
+const TIPS = [
+    "Use water that is truly boiling. Water that is only warm will not cook the garri, and the eba will feel gritty.",
+    "Pour the garri in slowly and spread it over the water. Do not dump it all in one spot.",
+    "Let the pot sit covered for 1 minute before you stir. This lets the garri soak properly.",
+    "Stir hard with a wooden spatula and press the eba against the sides of the pot to remove lumps.",
+    "Get the water right. Too much water makes it watery, too little makes it hard.",
+    "Eat it while it is hot, with plenty of soup."
+];
+
+const FAQ = [
+    ["Why is my eba full of lumps?", "Most likely the garri was poured in too fast, or it was not stirred hard enough. Pour slowly, let it soak for 1 minute, then stir and press firmly."],
+    ["Why is my eba too hard?", "There was too little water. Use about 1.35 cups of water for every 1 cup of garri."],
+    ["Why is my eba watery and soft?", "There was too much water. Next time measure the water carefully, or add a little more garri and stir."],
+    ["Why does my eba feel gritty or raw?", "The water was not hot enough. Warm water cannot cook the garri. Make sure it is bubbling hot."],
+    ["Can I use cold water?", "No. Eba needs boiling water to make the garri swell and turn smooth."],
+    ["White garri or yellow garri?", "Both work. White garri is plain. Yellow garri has palm oil added for colour and flavour. Choose the one you like."]
+];
+
+let mode = 1;
+
+function fmt(x) { return parseFloat(x.toFixed(2)).toString(); }
+
+function zoom(src) {
+    document.getElementById("lbImg").src = src;
+    document.getElementById("lightbox").style.display = "flex";
+}
+
+function buildGallery() {
+    let h = "";
+    PICS.forEach(function (p) {
+        h += '<img src="' + p + '" alt="Picture" onclick="zoom(this.src)" onerror="this.style.display=\'none\'">';
+    });
+    document.getElementById("gallery").innerHTML = h;
+    document.getElementById("banner-eba").src = PICS[1];
+    document.getElementById("banner-soups").src = PICS[2];
+}
+
+function buildHistory() {
+    let html = "";
+    HISTORY.forEach(function (sec, idx) {
+        html += '<div class="card"><h3 class="gold">' + sec.title + '</h3>';
+        sec.lines.forEach(function (l) { html += "<p>" + l + "</p>"; });
+        html += "</div>";
+        if (idx === 1) { html += '<img class="wide" src="' + PICS[1] + '" alt="Picture" onclick="zoom(this.src)" onerror="this.style.display=\'none\'">'; }
+        if (idx === 3) { html += '<img class="wide" src="' + PICS[2] + '" alt="Picture" onclick="zoom(this.src)" onerror="this.style.display=\'none\'">'; }
+    });
+    document.getElementById("historyCards").innerHTML = html;
+
+    let t = "";
+    TIMELINE.forEach(function (i) { t += '<div class="tl-item"><b>' + i.when + '</b>' + i.text + '</div>'; });
+    document.getElementById("timeline").innerHTML = t;
+
+    let g = "";
+    GLOSSARY.forEach(function (i) { g += '<p><span class="hl">' + i[0] + ':</span> ' + i[1] + '</p>'; });
+    document.getElementById("glossary").innerHTML = g;
+}
+
+function buildEbaExtras() {
+    const rows = [1, 2, 4, 6, 10, 20];
+    let h = '<table class="chart"><tr><th>People</th><th>Normal<br>garri / water</th><th>Big eaters 8x<br>garri / water</th></tr>';
+    rows.forEach(function (n) {
+        h += "<tr><td><b>" + n + "</b></td><td>" + fmt(n) + " / " + fmt(n * 1.35) + " cups</td><td>" + fmt(n * 8) + " / " + fmt(n * 8 * 1.35) + " cups</td></tr>";
+    });
+    h += "</table>";
+    document.getElementById("chart").innerHTML = h;
+
+    document.getElementById("tips").innerHTML = TIPS.map(function (t) { return "<li>" + t + "</li>"; }).join("");
+
+    let f = "";
+    FAQ.forEach(function (q) { f += "<details><summary>" + q[0] + "</summary><p>" + q[1] + "</p></details>"; });
+    document.getElementById("faq").innerHTML = f;
+
+    let s = "";
+    SOUPS.forEach(function (q) { s += '<p><span class="hl">' + q[0] + ':</span> ' + q[1] + '</p>'; });
+    document.getElementById("soupList").innerHTML = s;
+}
+
+function buildFrame() {
+    const R = 108;
+    let out = "";
+    function pt(theta, r) {
+        const t = theta * Math.PI / 180;
+        return [150 + r * Math.cos(t), 150 - r * Math.sin(t)];
+    }
+    const s1 = pt(130, R), e1 = pt(236, R);
+    const s2 = pt(50, R), e2 = pt(-56, R);
+    out += '<path d="M' + s1[0] + ' ' + s1[1] + ' A' + R + ' ' + R + ' 0 0 0 ' + e1[0] + ' ' + e1[1] + '" fill="none" stroke="url(#goldG)" stroke-width="3"/>';
+    out += '<path d="M' + s2[0] + ' ' + s2[1] + ' A' + R + ' ' + R + ' 0 0 1 ' + e2[0] + ' ' + e2[1] + '" fill="none" stroke="url(#goldG)" stroke-width="3"/>';
+    for (let a = 130; a <= 236; a += 8) {
+        const size = 13 - ((a - 130) / 106) * 4;
+        [1, 2].forEach(function (side) {
+            const theta = side === 1 ? a : 180 - a;
+            const rotBase = -(theta + 90);
+            const inner = pt(theta, R - 8);
+            const outer = pt(theta, R + 8);
+            out += '<ellipse cx="' + inner[0] + '" cy="' + inner[1] + '" rx="' + size + '" ry="4.6" fill="url(#goldG)" transform="rotate(' + (rotBase + 35) + ' ' + inner[0] + ' ' + inner[1] + ')"/>';
+            out += '<ellipse cx="' + outer[0] + '" cy="' + outer[1] + '" rx="' + size + '" ry="4.6" fill="url(#goldG)" transform="rotate(' + (rotBase - 35) + ' ' + outer[0] + ' ' + outer[1] + ')"/>';
+        });
+    }
+    document.getElementById("leaves").innerHTML = out;
+}
+
+function showTab(key) {
+    ["history", "eba", "soups", "voice"].forEach(function (k) {
+        document.getElementById("sec-" + k).style.display = (k === key) ? "block" : "none";
+        document.getElementById("tab-" + k).classList.toggle("active", k === key);
+    });
+}
+
+function setMode(m) {
+    mode = m;
+    document.getElementById("normalBtn").classList.toggle("on", m === 1);
+    document.getElementById("bigBtn").classList.toggle("on", m === 8);
+    calc();
+}
+
+function getPeople() {
+    const p = parseInt(document.getElementById("people").value);
+    return (isNaN(p) || p < 1) ? 0 : p;
+}
+
+function amounts() {
+    const people = getPeople();
+    const garri = people * mode;
+    const water = garri * 1.35;
+    return {people: people, garri: garri, water: water};
+}
+
+function calc() {
+    const a = amounts();
+    if (a.people === 0) {
+        document.getElementById("servLine").innerText = "Type how many people are eating above.";
+        document.getElementById("outGarri").innerText = "?";
+        document.getElementById("outWater").innerText = "?";
+        document.getElementById("outMl").innerText = "";
+        document.getElementById("potTip").innerText = "";
+        return;
+    }
+    let line = "For " + a.people + (a.people === 1 ? " person" : " people");
+    if (mode === 8) {
+        line += " (big eaters, 8x portions) that is " + (a.people * 8) + " normal servings.";
+    } else {
+        line += " that is " + a.people + (a.people === 1 ? " serving." : " servings.");
+    }
+    document.getElementById("servLine").innerText = line;
+    document.getElementById("outGarri").innerText = fmt(a.garri);
+    document.getElementById("outWater").innerText = fmt(a.water);
+    document.getElementById("outMl").innerText = "(about " + Math.round(a.water * 240) + " ml)";
+    let tip = "Tip: use a pot that can hold at least double the water.";
+    if (a.garri > 10) { tip = "Tip: this is a lot. Use a very big pot, or cook it in 2 or 3 rounds so it does not form lumps."; }
+    document.getElementById("potTip").innerText = tip;
+}
+
+async function speak(text, voice, rate, btn, player) {
+    const original = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "⏳ Making voice... please wait";
+    const fd = new FormData();
+    fd.append("text", text);
+    fd.append("voice", voice);
+    fd.append("rate", rate);
+    try {
+        const r = await fetch("/generate", {method: "POST", body: fd});
+        if (!r.ok) throw new Error("failed");
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        player.src = url;
+        player.style.display = "block";
+        player.play().catch(function () {});
+        btn.innerText = original;
+        btn.disabled = false;
+        return url;
+    } catch (e) {
+        alert("Voice failed. Please wait a few seconds and try again.");
+        btn.innerText = original;
+        btn.disabled = false;
+        return null;
+    }
+}
+
+function listenHistory() {
+    let text = "The story of eba. ";
+    HISTORY.forEach(function (sec) {
+        sec.lines.forEach(function (l) { text += l + " "; });
+    });
+    speak(text, "en-NG-EzinneNeural", "-15%", document.getElementById("histBtn"), document.getElementById("histPlayer"));
+}
+
+function listenRecipe() {
+    const a = amounts();
+    if (a.people === 0) { alert("Please type how many people are eating first."); return; }
+    let t = "Here is how to make eba for " + a.people + (a.people === 1 ? " person. " : " people. ");
+    if (mode === 8) { t += "These are big eaters, so the portions are eight times bigger. "; }
+    t += "You will need " + fmt(a.garri) + " cups of garri, and " + fmt(a.water) + " cups of hot water. ";
+    t += "Step 1. Pour the water into a clean pot and boil it for 5 to 7 minutes until it is bubbling hot. ";
+    t += "Step 2. Turn off the heat. ";
+    t += "Step 3. Pour the garri slowly into the hot water and spread it evenly. Do not stir yet. ";
+    t += "Step 4. Cover the pot for 1 minute so the garri can soak and soften. ";
+    t += "Step 5. Use a wooden spatula to turn and press the eba against the sides of the pot until it is smooth and lump free. ";
+    t += "Step 6. Mold it into balls and serve hot with your favourite soup. Enjoy!";
+    speak(t, "en-NG-EzinneNeural", "-15%", document.getElementById("recipeBtn"), document.getElementById("recipePlayer"));
+}
+
+async function makeVoice() {
+    const text = document.getElementById("vText").value.trim();
+    if (!text) { alert("Please type some text first."); return; }
+    const url = await speak(
+        text,
+        document.getElementById("vVoice").value,
+        document.getElementById("vSpeed").value,
+        document.getElementById("vBtn"),
+        document.getElementById("vPlayer")
+    );
+    if (url) {
+        const dl = document.getElementById("vDownload");
+        dl.href = url;
+        dl.style.display = "block";
+    }
+}
+
+buildGallery();
+buildHistory();
+buildEbaExtras();
+buildFrame();
+calc();
+</script>
+</body>
+</html>"""
+
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return HTML
+
+
+@app.post("/generate")
+async def generate(
+    text: str = Form(...),
+    voice: str = Form("en-NG-EzinneNeural"),
+    rate: str = Form("-15%"),
+):
+    if voice not in VOICES:
+        voice = "en-NG-EzinneNeural"
+    if rate not in RATES:
+        rate = "-15%"
+    text = text.strip()[:9000]
+    if not text:
+        return Response(status_code=400)
+
+    cleaned_text = preprocess_for_tts(text)
+    communicate = edge_tts.Communicate(cleaned_text, voice, rate=rate, pitch="+0Hz")
+
+    audio = bytearray()
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio.extend(chunk["data"])
+    return Response(content=bytes(audio), media_type="audio/mpeg")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
